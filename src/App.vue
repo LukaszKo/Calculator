@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar app color="primary" dark>
-      <div class="d-flex align-center justify-center">Leasing Calculator</div>
+      <v-toolbar-title>Calculator</v-toolbar-title>
     </v-app-bar>
 
     <v-content>
@@ -16,21 +16,52 @@
                 <v-card raised>
                   <v-col>
                     <v-form ref="form" v-model="valid" lazy-validation>
+                      <v-row>
+                        <v-col>
+                          <v-text-field
+                            v-model="amount"
+                            label="Cena samochodu"
+                            :rules="[v => !!v || 'Cena jest wymagana']"
+                            required
+                          ></v-text-field>
+                        </v-col>
+                        <v-col>
+                          <v-radio-group
+                            v-model="amountType"
+                            row
+                            :rules="[v => !!v || 'Zaznacz typ ceny']"
+                            required
+                          >
+                            <v-radio label="netto" value="netto"></v-radio>
+                            <v-radio label="brutto" value="brutto"></v-radio>
+                          </v-radio-group>
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col>
+                          <v-text-field
+                            v-model="leasingRate"
+                            label="Rata Leasingowa"
+                            :rules="[v => !!v || 'Rata jest wymagana']"
+                          ></v-text-field>
+                        </v-col>
+                        <v-col>
+                          <v-radio-group
+                            v-model="rateType"
+                            row
+                            :rules="[v => !!v || 'Zaznacz typ raty']"
+                            required
+                          >
+                            <v-radio label="netto" value="netto"></v-radio>
+                            <v-radio label="brutto" value="brutto"></v-radio>
+                          </v-radio-group>
+                        </v-col>
+                      </v-row>
                       <v-text-field
-                        v-model="amount"
-                        label="Kwota"
-                        :rules="[v => !!v || 'Kwota jest wymagana']"
-                        required
+                        v-model="insurance"
+                        type="number"
+                        label="Ubezpieczenie za rok (% od ceny netto)"
                       ></v-text-field>
-                      <v-radio-group
-                        v-model="type"
-                        row
-                        :rules="[v => !!v || 'Zaznacz typ kwoty']"
-                        required
-                      >
-                        <v-radio label="netto" value="netto"></v-radio>
-                        <v-radio label="brutto" value="brutto"></v-radio>
-                      </v-radio-group>
                       <div class="mt-4">
                         <v-btn
                           :disabled="!valid"
@@ -45,20 +76,42 @@
                   <div v-if="showResults">
                     <v-card-title primary-title>Wyniki</v-card-title>
                     <v-card-text>
-                      NETTO:
-                      <span class="blue--text">{{netto | currency}}</span>
+                      Cena NETTO:
+                      <span class="blue--text">{{netto | toFixed | currency}}</span>
                     </v-card-text>
                     <v-card-text>
-                      BRUTTO:
-                      <span class="blue--text">{{brutto | currency}}</span>
+                      Cena BRUTTO:
+                      <span class="blue--text">{{brutto | toFixed | currency}}</span>
                     </v-card-text>
                     <v-card-text>
                       VAT:
-                      <span class="blue--text">{{vat | currency}}</span>
+                      <span class="blue--text">{{vat | toFixed | currency}}</span>
+                    </v-card-text>
+                    <v-card-text>
+                      Rata NETTO:
+                      <span class="blue--text">{{leasingRateNetto | toFixed | currency}}</span>
+                    </v-card-text>
+                    <v-card-text>
+                      Rata BRUTTO:
+                      <span
+                        class="blue--text"
+                      >{{leasingRateBrutto | toFixed | currency}}</span>
+                    </v-card-text>
+                    <v-card-text>
+                      Faktyczny koszt raty:
+                      <span
+                        class="blue--text"
+                      >{{actualRateExpense | toFixed | currency}}</span>
+                    </v-card-text>
+                    <v-card-text>
+                      Ubezpieczenie za rok:
+                      <span
+                        class="blue--text"
+                      >{{insuranceValue | toFixed | currency}}</span>
                     </v-card-text>
                     <v-card-text v-if="checkIfIsOverLimit">
                       Kwota ponad limit:
-                      <span class="blue--text">{{overLimit | currency}}</span>
+                      <span class="blue--text">{{overLimit | toFixed | currency}}</span>
                     </v-card-text>
                   </div>
                 </v-card>
@@ -68,22 +121,6 @@
         </v-row>
       </v-container>
     </v-content>
-    <!-- <v-bottom-navigation v-model="bottomNav">
-      <v-btn value="recent">
-        <span>Recent</span>
-        <v-icon>mdi-history</v-icon>
-      </v-btn>
-
-      <v-btn value="favorites">
-        <span>Favorites</span>
-        <v-icon>mdi-heart</v-icon>
-      </v-btn>
-
-      <v-btn value="nearby">
-        <span>Nearby</span>
-        <v-icon>mdi-map-marker</v-icon>
-      </v-btn>
-    </v-bottom-navigation> -->
   </v-app>
 </template>
 
@@ -94,25 +131,33 @@ export default {
   data: () => ({
     valid: false,
     amount: "",
-    type: "",
+    amountType: "",
     LIMIT: 150000,
     showResults: false,
-    bottomNav: "recent"
+    bottomNav: "recent",
+    leasingRate: "",
+    TAX_RATE: 0.19,
+    rateType: "",
+    insurance: ""
   }),
   filters: {
     currency(val) {
       if (!val) return "";
       return `${val} pln`;
+    },
+    toFixed(val) {
+      if (!val) return "";
+      return parseInt(val).toFixed(2);
     }
   },
   computed: {
     brutto() {
-      return this.type === "netto"
+      return this.amountType === "netto"
         ? (parseInt(this.amount) * 1.23).toFixed(0)
         : this.amount;
     },
     netto() {
-      return this.type === "brutto"
+      return this.amountType === "brutto"
         ? (parseInt(this.amount) / 1.23).toFixed(0)
         : this.amount;
     },
@@ -128,6 +173,27 @@ export default {
     },
     checkIfIsOverLimit() {
       return this.calulcatedHalfVAT > this.LIMIT;
+    },
+    halfRateVAT() {
+      return parseInt((this.leasingRateBrutto - this.leasingRateNetto) / 2);
+    },
+    leasingRateNetto() {
+      return this.rateType === "brutto"
+        ? (parseInt(this.leasingRate) / 1.23).toFixed(2)
+        : parseInt(this.leasingRate);
+    },
+    leasingRateBrutto() {
+      return this.rateType === "netto"
+        ? parseInt(this.leasingRate) * 1.23
+        : parseInt(this.leasingRate);
+    },
+    actualRateExpense() {
+      const expense = this.leasingRateNetto + this.halfRateVAT;
+      const result = expense * this.TAX_RATE;
+      return expense - parseInt(result);
+    },
+    insuranceValue() {
+      return (this.netto * this.insurance) / 100;
     }
   },
   methods: {
