@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar app color="primary" dark>
-      <v-toolbar-title>Calculator</v-toolbar-title>
+      <v-toolbar-title>Kalkulator</v-toolbar-title>
     </v-app-bar>
 
     <v-content>
