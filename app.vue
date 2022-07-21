@@ -83,11 +83,6 @@
 											<v-col class="font-weight-bold">{{ actualInitialExpense }} pln</v-col>
 											<v-divider></v-divider>
 										</v-row>
-										<v-row v-if="checkIfIsOverLimit">
-											<v-col> Kwota ponad limit:</v-col>
-											<v-col class="font-weight-bold">{{ overLimit }} pln</v-col>
-											<v-divider></v-divider>
-										</v-row>
 									</v-col>
 								</v-card>
 							</v-col>
